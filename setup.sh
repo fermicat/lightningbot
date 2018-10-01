@@ -1,7 +1,7 @@
 # @title the Script for Install Lnd + Bitcoin Full Node on Lightweight Client
 # @author QuantumCat
-# @dev 1. This script is designed for Debian / Ubantu Linux, have been tested on Debian, Ubantu, 
-#         Mint. For Raspbian, use the dphys-swapfile method. For RedHat series, please manually 
+# @dev 1. This script is designed for Debian / Ubantu / Mint / Raspbian. 
+#         For Raspbian, use the dphys-swapfile method. For RedHat series, please manually 
 #         check it or wait for our update.
 #      2. c-lightning and other lightning client may be supported in the future update.
 #      3. This require one drive with more than 500 GB (1 TB recommended) connected. Assume the 
@@ -33,10 +33,12 @@ function echo_blue() {
 
 # @dev the most easy way, but rely on https://ipinfo.io
 # using curl to read the data from ipinfo.io to get local external IP
-public_ip=$(curl ipinfo.io/ip)
-router_address=$(ip -o -f inet addr show | awk '/scope global/{sub(/[^.]+\//,"0/",$4);print $4}')
+public_ip=$( curl ipinfo.io/ip )
+router_address=$( ip -o -f inet addr show | awk '/scope global/{sub(/[^.]+\//,"0/",$4);print $4}' )
 btc_version=0.16.3
 lnd_version=0.5-beta
+OS_NAME=$( cat /etc/os-release | grep ^NAME | cut -d'"' -f2 )
+
 
 function user_input {
     echo_yellow "Please input the RPC username and password for bitcoin core and Lnd..."
@@ -131,26 +133,34 @@ function swap_conf {
     echo_blue "Configuring the swap file on hdd..."
     swap_path=/mnt/hdd/swapfile
 
-    # @dev 2 GB swap file
-    # @dev for Debian-Ubuntu Linux
-    sudo dd if=/dev/zero of=$swap_path count=2048 bs=1M
-    sudo mkswap $swap_path
-    chmod 600 $swap_path
-    sudo swapon $swap_path
-    sudo echo "$swap_path swap swap defaults 0 0" >> /etc/fstab
-
-    # @dev for Raspbian Linux
-    #sudo apt-get install dphys-swapfile
-    #sudo dphys-swapfile swapoff
-    #sudo dphys-swapfile uninstall
-    #sudo sed -i".bak" "/CONF_SWAPFILE/d" /etc/dphys-swapfile
-    #sudo sed -i".bak" "/CONF_SWAPSIZE/d" /etc/dphys-swapfile
-    #echo "CONF_SWAPFILE=$swap_path" >> /etc/dphys-swapfile
-    #sudo dd if=/dev/zero of=$swap_path count=2048 bs=1M
-    #chmod 600 $swap_path
-    #sudo mkswap $swap_path
-    #sudo dphys-swapfile setup
-    #sudo dphys-swapfile swapon
+    # the swap configuration depends on different OS
+    case "${OS_NAME}" in
+		"Raspbian GNU/Linux")
+            sudo apt-get install dphys-swapfile
+            sudo dphys-swapfile swapoff
+            sudo dphys-swapfile uninstall
+            sudo sed -i".bak" "/CONF_SWAPFILE/d" /etc/dphys-swapfile
+            sudo sed -i".bak" "/CONF_SWAPSIZE/d" /etc/dphys-swapfile
+            echo "CONF_SWAPFILE=$swap_path" >> /etc/dphys-swapfile
+            sudo dd if=/dev/zero of=$swap_path count=2048 bs=1M
+            chmod 600 $swap_path
+            sudo mkswap $swap_path
+            sudo dphys-swapfile setup
+            sudo dphys-swapfile swapon
+		;;
+		"Ubuntu" | "Linux Mint" | "Debian")
+            sudo dd if=/dev/zero of=$swap_path count=2048 bs=1M
+            sudo mkswap $swap_path
+            chmod 600 $swap_path
+            sudo swapon $swap_path
+            sudo echo "$swap_path swap swap defaults 0 0" >> /etc/fstab
+		;;
+		*)
+            echo_red "Operation system currently not support by this script."
+            exit 1
+		;;
+	esac    
+    
     echo_green ">>>>>>>>>>>>>>>>>>>> Swap file is created!"
 }
 
@@ -201,7 +211,7 @@ function install_lnd {
     mkdir -p download
     cd download
     wget "https://github.com/lightningnetwork/lnd/releases/download/v$lnd_version/lnd-linux-arm64-v$lnd_version.tar.gz"
-    tar -xzf "lnd-linux-arm-v$lnd_version.tar.gz"
+    tar -xzf "lnd-linux-arm64-v$lnd_version.tar.gz"
     sudo install -m 0755 -o root -g root -t /usr/local/bin lnd-linux-arm64-v$lnd_version/*
     echo_green  ">>>>>>>>>>>>>>>>>>>> Lnd is installed!"
 }
@@ -235,9 +245,33 @@ function edit_lnd_conf {
     echo_green ">>>>>>>>>>>>>>>>>>>> lnd.conf file is prepared!"
 }
 
+function auto_run {
+    echo_blue "preparing for auto start units..."
+    cd ~
+    sudo cp ~/lightningbot/bitcoind.service /etc/systemd/system/
+    sudo systemctl enable bitcoind.service
+    sudo systemctl start bitcoind.service
+    
+    # use the API of ipinfo.io
+    sudo cp ~/lightningbot/getpublicip.sh /usr/local/bin/
+    sudo chmod +x /usr/local/bin/getpublicip.sh
+    sudo cp ~/lightningbot/getpublicip.service /etc/systemd/system/
+    sudo getpublicip.sh
+    sudo systemctl enable getpublicip
+    sudo systemctl start getpublicip
+    sleep 1m
+    echo_green "The public IP is:"
+    cat /run/publicip
+
+    sudo cp ~/lightningbot/lnd.service /etc/systemd/system/
+    sudo systemctl enable lnd.service
+    sudo systemctl start lnd.service
+
+    echo_green ">>>>>>>>>>>>>>>>>>>> auto start setting have been completed."
+}
 
 # @dev the main program start here
-# ************************* MAIN PROGRAM ************************ 
+# ************************************** MAIN PROGRAM ************************************ 
 
 # Check if script is launched with sudo
 # for root, id -u will return 0
@@ -248,9 +282,9 @@ fi
 
 echo_blue "This script is going to install bitcoin core $btc_version and lnd $lnd_version."
 echo_blue "The configuration will be completed during the process."
-echo_red "Please KEEP an off-line record of the user name, password and secret key."
-echo_red "Please KEEP an off-line record of the user name, password and secret key."
-echo_red "Please KEEP an off-line record of the user name, password and secret key."
+echo_red "Please KEEP an off-line record of the username, password and secret key."
+echo_red "Please KEEP an off-line record of the username, password and secret key."
+echo_red "Please KEEP an off-line record of the username, password and secret key."
 echo_red "If you loss your secret key, you loss the control of your bitcoin wallet"
 echo_red "and NO ONE CAN RECOVER THAT!"
 echo " "
@@ -285,4 +319,16 @@ install_bitcoin_core
 edit_bitcoin_conf
 install_lnd
 edit_lnd_conf
+
+auto_run
+
+echo "If you run the mainnet directly, it is recommended that sync the full block at first at your local PC."
+echo "If you run the testnet at first, when switching to mainnet, run:"
+echo_blue "sudo ./mainnet.sh"
+echo "Then run:"
+echo_blue "scp -r {block_path}\blocks username@raspberry_ip:/mnt/hdd/bitcoin/"
+echo_blue "scp -r {block_path}\chainstate username@raspberry_ip:/mnt/hdd/bitcoin/"
+echo "or use WinScp"
+
+echo_yellow "Plese RESTART after the set up your node, and wait for syncing."
 
