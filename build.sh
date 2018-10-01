@@ -306,7 +306,6 @@ read -p "(yes/no)" yn
     esac
 read -p "Press any key to continue or Ctrl+C to stop" temp_process
 
-sudo chmod +x update-linux.sh
 sudo ./update-linux.sh
 user_input
 prepare_required_package
