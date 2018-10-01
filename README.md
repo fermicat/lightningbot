@@ -6,7 +6,7 @@ make sure you connect a drive at least 500 GB (1 TB recommended) to the Raspberr
 
 ```
 git clone https://github.com/quantumcatwang/lightningbot.git
-sudo ./update-linux.sh
+sudo ./build.sh
 ```
 
 Wait until the block complete syncing.
@@ -29,15 +29,15 @@ For API of lnd: https://api.lightning.community/
 
 
 It is recommended that sync the full block at first at your local PC.
-If you run the testnet at first, when switching to mainnet, run: (If you run the mainnet directly, skip it)
+If you run the testnet at first, when switching to mainnet, run: (If you run the mainnet directly, skip it, however, it is highly recommended to test on testnet)
 ```
 sudo ./mainnet.sh
 ```
-After restart, run
+After restart, run:
 ```
 scp -r {block_path}\blocks username@raspberry_ip:/mnt/hdd/bitcoin/
 scp -r {block_path}\chainstate username@raspberry_ip:/mnt/hdd/bitcoin/
 ```
-or use WinScp
+or use WinScp.
 
 
