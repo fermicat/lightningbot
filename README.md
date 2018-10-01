@@ -17,13 +17,15 @@ Use the lnd API for creating wallet. Input the RPC username, RPC password, write
 For API of lnd: https://api.lightning.community/
 
 ## Switch to mainnet
------------------------------ Disclaimer -------------------------------------
+ Disclaimer 
+ ```
  This script may contain errors that may result in loss of user's bitcoin.
  Users should read the script and verify it.
  It would be good to run testnet and check the command line by line.
  The integration of bitcoin core and lnd should be verify by users.
  REMENBER: Bitcoin is still experimental.
  Lightning network is more experimental.
+ ```
 
 
 
