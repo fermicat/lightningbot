@@ -24,7 +24,8 @@ For API of lnd: https://api.lightning.community/
  The integration of bitcoin core and lnd should be verify by users.
  REMENBER: Bitcoin is still experimental.
  Lightning network is more experimental.
-------------------------------------------------------------------------------
+
+
 
 It is recommended that sync the full block at first at your local PC.
 If you run the testnet at first, when switching to mainnet, run: (If you run the mainnet directly, skip it)
