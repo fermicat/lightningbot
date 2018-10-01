@@ -7,7 +7,6 @@ make sure you connect a drive at least 500 GB (1 TB recommended) to the Raspberr
 ```
 git clone https://github.com/quantumcatwang/lightningbot.git
 sudo ./update-linux.sh
-sudo ./setup.sh
 ```
 
 Wait until the block complete syncing.
