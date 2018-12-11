@@ -1,6 +1,3 @@
-# @dev this script is for update the linux system
- 
-echo "\033[36m Updating system..."
 sudo apt-get update
 sudo apt-get -y dist-upgrade
 sudo apt-get -y upgrade
