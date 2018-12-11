@@ -34,15 +34,18 @@ function echo_blue {
 # using curl to read the data from ipinfo.io to get local external IP
 public_ip=$( curl ipinfo.io/ip )
 router_address=$( ip -o -f inet addr show | awk '/scope global/{sub(/[^.]+\//,"0/",$4);print $4}' )
-btc_version=0.17.0.1
+btc_version=0.17.0
 lnd_version=0.5.1-beta
 OS_NAME=$( cat /etc/os-release | grep ^NAME | cut -d'"' -f2 )
+user=$(logname)
+userhome='/home/'$user
 
 
 function user_input {
     echo_yellow "Please input the RPC username and password for bitcoin core and Lnd..."
     read -p "Input username: " rpc_user
     read -s -p "Input password: (will not be shown) " rpc_passwd
+    echo " "
     echo_blue "You need an lightning alias name to show on the network." 
     read -p "Input your LND node alias name: " lnd_alias
     echo_yellow "Please connect your hard drive to the device..."
@@ -76,7 +79,7 @@ function security {
     sudo ufw enable
     sudo systemctl enable ufw  # auto-run when boot
     sudo ufw status
-    sudo apt-get install fail2ban
+    sudo apt-get install -y fail2ban
     echo_green ">>>>>>>>>>>>>>>>>>>> security configurated!"
 }
 
@@ -108,15 +111,17 @@ function hdd_mount {
     UUID=$(sudo blkid -o value -s UUID $hdd_path)
     
     echo_blue "mount the hdd to /mnt/hdd ..."
-    sudo mkdir /mnt/hhd
+    sudo mkdir /mnt/hdd
     # write the UUID information in /etc/fstab so as to configure it after re-start
     sudo echo "UUID=$UUID /mnt/hdd ext4 noexec,defaults 0 0" >> /etc/fstab
     
-    if mount | grep "$hdd_path" > /dev/null;then
-        :
-    else
-        sudo mount -a
-    fi
+    #if mount | grep "$hdd_path" > /dev/null;then
+    #    :
+    #else
+    #    sudo mount -a
+    #fi
+    sudo mount -a
+
     df /mnt/hdd
     echo_yellow "Do you see the mounting information for $hdd_path ?"
     read -p "Press any key to continue, or Ctrl+C to quit." temp_process
@@ -167,7 +172,8 @@ function swap_conf {
 function install_bitcoin_core {
     echo_blue "Installing Bitcoin Core..."
     
-    rm -rf ~/bitcoin
+    rm -rf $userhome/bitcoin
+    cd $userhome
     wget https://bitcoincore.org/bin/bitcoin-core-$btc_version/bitcoin-$btc_version-arm-linux-gnueabihf.tar.gz
     tar -xvf bitcoin-$btc_version-arm-linux-gnueabihf.tar.gz
     sudo install -m 0755 -o root -g root -t /usr/local/bin bitcoin-$btc_version/bin/*
@@ -182,21 +188,22 @@ function edit_bitcoin_conf {
     # mount ~/.bitcoin to hdd
     cd /mnt/hdd
     mkdir bitcoin
-    cd ~
-    ln -s /mnt/hdd/bitcoin ~/.bitcoin 
-    cp ~/lightningbot/conf/bitcoin.conf ~/.bitcoin/
+    cd $userhome
+    mkdir .bitcoin
+    ln -s /mnt/hdd/bitcoin $userhome/.bitcoin 
+    cp $userhome/lightningbot/conf/bitcoin.conf $userhome/.bitcoin/
 
     read -p "Are you going to run the mainnet? (y/n)" mainnet
     case $mainnet in
         [Yy]* ) echo "Run mainnet.";;
-        [Nn]* ) echo "testnet=1" >> ~/.bitcoin/bitcoin.conf;;
+        [Nn]* ) echo "testnet=1" >> $userhome/.bitcoin/bitcoin.conf;;
             * ) echo "Please answer yes or no. (y/n)";;
     esac
 
     sudo sed -i".bak" "/rpcuser/d" /mnt/hdd/bitcoin/bitcoin.conf
     sudo sed -i".bak" "/rpcpassword/d" /mnt/hdd/bitcoin/bitcoin.conf
-    echo "rpcuser=$rpc_user" >> ~/.bitcoin/bitcoin.conf
-    echo "rpcpassword=$rpc_passwd" >> ~/.bitcoin/bitcoin.conf
+    echo "rpcuser=$rpc_user" >> $userhome/.bitcoin/bitcoin.conf
+    echo "rpcpassword=$rpc_passwd" >> $userhome/.bitcoin/bitcoin.conf
     
     echo_green ">>>>>>>>>>>>>>>>>>>> bitcoin.conf is prepared!"
 }
@@ -205,7 +212,7 @@ function edit_bitcoin_conf {
 function install_lnd {
     
     echo_blue "Installing LND $lnd_version"
-    cd ~
+    cd $userhome
     mkdir -p download
     cd download
     wget "https://github.com/lightningnetwork/lnd/releases/download/v$lnd_version/lnd-linux-arm64-v$lnd_version.tar.gz"
@@ -222,21 +229,21 @@ function edit_lnd_conf {
     # mount ~/.lnd to hdd
     cd /mnt/hdd
     mkdir lnd
-    cd ~
-    ln -s /mnt/hdd/lnd ~/.lnd
-    cp ~/lightningbot/conf/lnd.conf ~/.lnd/
+    cd $userhome
+    ln -s /mnt/hdd/lnd $userhome/.lnd
+    cp $userhome/lightningbot/conf/lnd.conf $userhome/.lnd/
 
-    echo "alias=$lnd_alias" >> ~/.lnd/lnd.conf
+    echo "alias=$lnd_alias" >> $userhome/.lnd/lnd.conf
     case $miannet in
-        [Yy]* ) echo "bitcoin.mainnet=1" >> ~/.lnd/lnd.conf;;
-        [Nn]* ) echo "bitcoin.testnet=1" >> ~/.lnd/lnd.conf;;
+        [Yy]* ) echo "bitcoin.mainnet=1" >> $userhome/.lnd/lnd.conf;;
+        [Nn]* ) echo "bitcoin.testnet=1" >> $userhome/.lnd/lnd.conf;;
             * ) echo "Please answer yes or no. (y/n)";;
     esac
 
     read -p "Do you want autopilot? (y/n)" yn
     case $mainnet in
-        [Yy]* ) echo "autopilot.active=1" >> ~/.lnd/lnd.conf;;
-        [Nn]* ) echo "autopilot.active=0" >> ~/.lnd/lnd.conf;;
+        [Yy]* ) echo "autopilot.active=1" >> $userhome/.lnd/lnd.conf;;
+        [Nn]* ) echo "autopilot.active=0" >> $userhome/.lnd/lnd.conf;;
             * ) echo "Please answer yes or no. (y/n)";;
     esac
     
@@ -245,15 +252,15 @@ function edit_lnd_conf {
 
 function auto_run {
     echo_blue "preparing for auto start units..."
-    cd ~
-    sudo cp ~/lightningbot/systemd/bitcoind.service /etc/systemd/system/
+    cd $userhome
+    sudo cp $userhome/lightningbot/systemd/bitcoind.service /etc/systemd/system/
     sudo systemctl enable bitcoind.service
     sudo systemctl start bitcoind.service
     
     # use the API of ipinfo.io
-    sudo cp ~/lightningbot/ip-module/getpublicip.sh /usr/local/bin/
+    sudo cp $userhome/lightningbot/ip-module/getpublicip.sh /usr/local/bin/
     sudo chmod +x /usr/local/bin/getpublicip.sh
-    sudo cp ~/lightningbot/systemd/getpublicip.service /etc/systemd/system/
+    sudo cp $userhome/lightningbot/systemd/getpublicip.service /etc/systemd/system/
     sudo getpublicip.sh
     sudo systemctl enable getpublicip
     sudo systemctl start getpublicip
@@ -261,7 +268,7 @@ function auto_run {
     echo_green "The public IP is:"
     cat /run/publicip
 
-    sudo cp ~/lightningbot/systemd/lnd.service /etc/systemd/system/
+    sudo cp $userhome/lightningbot/systemd/lnd.service /etc/systemd/system/
     sudo systemctl enable lnd.service
     sudo systemctl start lnd.service
 
