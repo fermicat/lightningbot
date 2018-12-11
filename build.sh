@@ -237,14 +237,14 @@ function edit_lnd_conf {
     case $miannet in
         [Yy]* ) echo "bitcoin.mainnet=1" >> $userhome/.lnd/lnd.conf;;
         [Nn]* ) echo "bitcoin.testnet=1" >> $userhome/.lnd/lnd.conf;;
-            * ) echo "Please answer yes or no. (y/n)";;
+            #* ) echo "Please answer yes or no. (y/n)";;
     esac
 
     read -p "Do you want autopilot? (y/n)" yn
     case $mainnet in
         [Yy]* ) echo "autopilot.active=1" >> $userhome/.lnd/lnd.conf;;
         [Nn]* ) echo "autopilot.active=0" >> $userhome/.lnd/lnd.conf;;
-            * ) echo "Please answer yes or no. (y/n)";;
+            #* ) echo "Please answer yes or no. (y/n)";;
     esac
     
     echo_green ">>>>>>>>>>>>>>>>>>>> lnd.conf file is prepared!"
@@ -261,12 +261,13 @@ function auto_run {
     sudo cp $userhome/lightningbot/ip-module/getpublicip.sh /usr/local/bin/
     sudo chmod +x /usr/local/bin/getpublicip.sh
     sudo cp $userhome/lightningbot/systemd/getpublicip.service /etc/systemd/system/
-    sudo getpublicip.sh
+    #sudo getpublicip.sh &
+
     sudo systemctl enable getpublicip
     sudo systemctl start getpublicip
-    sleep 1m
-    echo_green "The public IP is:"
-    cat /run/publicip
+    #sleep 1m
+    #echo_green "The public IP is:"
+    #cat /run/publicip
 
     sudo cp $userhome/lightningbot/systemd/lnd.service /etc/systemd/system/
     sudo systemctl enable lnd.service
