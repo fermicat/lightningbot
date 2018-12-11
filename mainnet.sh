@@ -8,4 +8,4 @@ sudo sed -i".bak" "/testnet/d" /mnt/hdd/bitcoin/bitcoin.conf
 sudo sed -i".bak" "/bitcoin.testnet/d" /mnt/hdd/lnd/lnd.conf
 echo "bitcoin.mainnet=1" >> /mnt/hdd/lnd/lnd.conf
 
-sudo shutdown -r +1 'The system will be restarted in 1 minutes.' 
+sudo shutdown -r +1 'The system will be restarted in 1 minutes.'

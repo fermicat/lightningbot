@@ -12,22 +12,22 @@
 #!/bin/bash
 
 # use red to return failure or warning
-function echo_red() {
+function echo_red {
     echo -e "\033[31m$1 \033[0m"
 }
 
 # use yellow to return choice
-function echo_yellow() {
+function echo_yellow {
     echo -e "\033[33m$1 \033[0m"
 }
 
 # use green to return success
-function echo_green() {
+function echo_green {
     echo -e "\033[32m$1 \033[0m"
 }
 
 # use sky blue to return process
-function echo_blue() {
+function echo_blue {
     echo -e "\033[36m$1 \033[0m"
 }
 
