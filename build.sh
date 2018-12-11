@@ -282,8 +282,6 @@ fi
 echo_blue "This script is going to install bitcoin core $btc_version and lnd $lnd_version."
 echo_blue "The configuration will be completed during the process."
 echo_red "Please KEEP an off-line record of the username, password and secret key."
-echo_red "Please KEEP an off-line record of the username, password and secret key."
-echo_red "Please KEEP an off-line record of the username, password and secret key."
 echo_red "If you loss your secret key, you loss the control of your bitcoin wallet"
 echo_red "and NO ONE CAN RECOVER THAT!"
 echo " "
