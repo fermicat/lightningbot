@@ -3,10 +3,10 @@
 # @dev 1. This script is designed for Debian / Ubantu / Mint / Raspbian. 
 #         For Raspbian, use the dphys-swapfile method. For RedHat series, please manually 
 #         check it or wait for our update.
-#      2. c-lightning and other lightning client may be supported in the future update.
+#      2. c-lightning and other lightning clients may be supported in the future update.
 #      3. This require one drive with more than 500 GB (1 TB recommended) connected. Assume the 
 #         user will not assign more than one drive.
-#      4. The default versions installed are bitcoin core 0.16.3 and lnd 0.5-beta
+#      4. The default versions installed are bitcoin core 0.17.0.1 and lnd 0.5-beta
 
 
 #!/bin/bash
@@ -35,8 +35,8 @@ function echo_blue() {
 # using curl to read the data from ipinfo.io to get local external IP
 public_ip=$( curl ipinfo.io/ip )
 router_address=$( ip -o -f inet addr show | awk '/scope global/{sub(/[^.]+\//,"0/",$4);print $4}' )
-btc_version=0.16.3
-lnd_version=0.5-beta
+btc_version=0.17.0.1
+lnd_version=0.5.1-beta
 OS_NAME=$( cat /etc/os-release | grep ^NAME | cut -d'"' -f2 )
 
 
@@ -60,7 +60,6 @@ function prepare_required_package {
     sudo apt-get install -y libboost-filesystem-dev libboost-chrono-dev libboost-program-options-dev 
     sudo apt-get install -y libboost-system-dev libboost-test-dev libboost-thread-dev  
     sudo apt-get install -y pkg-config python python3 python-pip python3-pip net-tools # pip for API @ python
-    sudo apt-get install -y tmux    # for multi-test
     echo_green ">>>>>>>>>>>>>>>>>>>> Required packages installed!"
 }
 
@@ -168,7 +167,7 @@ function swap_conf {
 # install bitcoin core
 function install_bitcoin_core {
     echo_blue "Installing Bitcoin Core..."
-    btc_verson=0.16.3
+    
     rm -rf ~/bitcoin
     wget https://bitcoincore.org/bin/bitcoin-core-$btc_version/bitcoin-$btc_version-arm-linux-gnueabihf.tar.gz
     tar -xvf bitcoin-$btc_version-arm-linux-gnueabihf.tar.gz
@@ -186,7 +185,7 @@ function edit_bitcoin_conf {
     mkdir bitcoin
     cd ~
     ln -s /mnt/hdd/bitcoin ~/.bitcoin 
-    cp ~/lightningbot/bitcoin.conf ~/.bitcoin/
+    cp ~/lightningbot/conf/bitcoin.conf ~/.bitcoin/
 
     read -p "Are you going to run the mainnet? (y/n)" mainnet
     case $mainnet in
@@ -205,7 +204,7 @@ function edit_bitcoin_conf {
 
 # install the lnd client
 function install_lnd {
-    lnd_version=0.5-beta
+    
     echo_blue "Installing LND $lnd_version"
     cd ~
     mkdir -p download
@@ -226,7 +225,7 @@ function edit_lnd_conf {
     mkdir lnd
     cd ~
     ln -s /mnt/hdd/lnd ~/.lnd
-    cp ~/lightningbot/lnd.conf ~/.lnd/
+    cp ~/lightningbot/conf/lnd.conf ~/.lnd/
 
     echo "alias=$lnd_alias" >> ~/.lnd/lnd.conf
     case $miannet in
@@ -248,14 +247,14 @@ function edit_lnd_conf {
 function auto_run {
     echo_blue "preparing for auto start units..."
     cd ~
-    sudo cp ~/lightningbot/bitcoind.service /etc/systemd/system/
+    sudo cp ~/lightningbot/systemd/bitcoind.service /etc/systemd/system/
     sudo systemctl enable bitcoind.service
     sudo systemctl start bitcoind.service
     
     # use the API of ipinfo.io
-    sudo cp ~/lightningbot/getpublicip.sh /usr/local/bin/
+    sudo cp ~/lightningbot/ip-module/getpublicip.sh /usr/local/bin/
     sudo chmod +x /usr/local/bin/getpublicip.sh
-    sudo cp ~/lightningbot/getpublicip.service /etc/systemd/system/
+    sudo cp ~/lightningbot/systemd/getpublicip.service /etc/systemd/system/
     sudo getpublicip.sh
     sudo systemctl enable getpublicip
     sudo systemctl start getpublicip
@@ -263,7 +262,7 @@ function auto_run {
     echo_green "The public IP is:"
     cat /run/publicip
 
-    sudo cp ~/lightningbot/lnd.service /etc/systemd/system/
+    sudo cp ~/lightningbot/systemd/lnd.service /etc/systemd/system/
     sudo systemctl enable lnd.service
     sudo systemctl start lnd.service
 
