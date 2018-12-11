@@ -1,3 +1,4 @@
+#!/bin/bash
 # @title the Script for Install Lnd + Bitcoin Full Node on Lightweight Client
 # @author QuantumCat
 # @dev 1. This script is designed for Debian / Ubantu / Mint / Raspbian. 
@@ -8,8 +9,6 @@
 #         user will not assign more than one drive.
 #      4. The default versions installed are bitcoin core 0.17.0.1 and lnd 0.5-beta
 
-
-#!/bin/bash
 
 # use red to return failure or warning
 function echo_red {
